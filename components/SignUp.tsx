@@ -68,9 +68,7 @@ const addUserDetails = async (formData:UserModel)=>{
     })
     formData.userMail=email;
     formData.timeStamp = serverTimestamp()
-    setDoc(doc(db, "users", googleUid), formData).then(()=>navigation.navigate("Games"));
-
-
+    setDoc(doc(db, "users", googleUid), formData).then(()=>navigation.navigate("disclaimer"));
 }
 // const googleSignIn = async () => {
 //     console.log("i am in")
@@ -136,7 +134,7 @@ if (!googleUid){
         render={({ field: { onChange, value, onBlur } }) => (
           <TextInput
             style={styles.input}
-            placeholder="מה שם המשפחה שלכם- אפשר גם כינוי "
+            placeholder="מה שם המשפחה שלכם?- אפשר גם כינוי "
             value={value}
             onBlur={onBlur}
             onChangeText={value => onChange(value)}
@@ -149,7 +147,7 @@ if (!googleUid){
           }
         }}
       />
-      {errors.name && <Text>{errors.name.message}</Text>}
+      {errors.name && <Text style={{color:"red"}}>{errors.name.message}</Text>}
 
       <Controller
         control={control}
@@ -170,7 +168,7 @@ if (!googleUid){
           }
         }}
       />
-      {errors.address && <Text>{errors.address.message}</Text>}
+      {errors.address && <Text style={{color:"red"}}>{errors.address.message}</Text>}
       <Controller
         control={control}
         name="phoneNumber"
@@ -191,7 +189,7 @@ if (!googleUid){
           }
         }}
       />
-      {errors.phoneNumber && <Text>{errors.phoneNumber.message}</Text>}
+      {errors.phoneNumber && <Text style={{color:"red"}}>{errors.phoneNumber.message}</Text>}
       <TouchableOpacity style={styles.button} onPress={handleSubmit(addUserDetails)}>
         <Text style={styles.buttonText}>סיים רישום</Text>
       </TouchableOpacity>

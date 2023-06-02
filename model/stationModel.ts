@@ -4,7 +4,7 @@ export interface Station {
     location?: { latitude: number, longitude: number, accuracy:number };
     description: string;
     answerType: string;
-    answer?: string;
+    answer?: string| string[];
     afterCorrectAnswer?:string;
     time?:number;
   }

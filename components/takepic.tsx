@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, PermissionsAndroid, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Feather } from "@expo/vector-icons"
+import React from 'react';
 
 interface props {
   getPicUri: (args: string) => void

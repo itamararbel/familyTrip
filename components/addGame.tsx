@@ -1,13 +1,13 @@
-import React, { useState,  useEffect } from 'react';
-import { ScrollView, TextInput, StyleSheet,  TouchableOpacity, PermissionsAndroid } from 'react-native'
+import React, { useState, useEffect } from 'react';
+import { ScrollView, TextInput, StyleSheet, TouchableOpacity, PermissionsAndroid } from 'react-native'
 import { useForm, Controller } from 'react-hook-form'
-import { doc, getFirestore,  setDoc } from "firebase/firestore";
+import { doc, getFirestore, setDoc } from "firebase/firestore";
 import { View } from 'react-native';
 import { Button as ButtonPaper, Dialog, Portal, Text } from 'react-native-paper';
 import AddStation from './addStation';
 import fireBase from '../fireBase';
 import * as firebase from 'firebase/storage'
-import { ref, uploadBytes } from 'firebase/storage';
+import { listAll, ref, uploadBytes } from 'firebase/storage';
 import * as FileSystem from 'expo-file-system';
 import { Feather } from "@expo/vector-icons"
 import { Station } from '../model/stationModel';
@@ -23,7 +23,7 @@ export default function AddGame() {
   const [text, setText] = useState("");
   const [r, setR] = useState(false);
   const showDialog = () => setVisible(true);
-  const hideDialog = () => {setVisible(false); setText("")}
+  const hideDialog = () => { setVisible(false); setText("") }
   const { control, handleSubmit, formState: { errors, isValid }, setValue } = useForm<Game>({ mode: 'onBlur' });
   const [stations, setStations] = useState<Station[]>([]);
   const db = getFirestore(fireBase)
@@ -66,13 +66,15 @@ export default function AddGame() {
           setValue('difficulty', savedGame.difficulty);
           setValue('estimatedTime', savedGame.estimatedTime);
           setValue('stations', savedGame.stations);
+          savedGame.price && setValue('price', savedGame.price);
+          savedGame.description && setValue('description', savedGame.description);
           setStations(savedGame.stations)
         })
       }
     })
   }, []);
 
-  const openAlert = (text:string)=>{
+  const openAlert = (text: string) => {
     setVisible(true)
     setText(text)
   }
@@ -82,32 +84,69 @@ export default function AddGame() {
     FileSystem.writeAsStringAsync(FileSystem.documentDirectory + "/gameInEdit.txt", JSON.stringify(dataSubmit))
   }
   const sendGame = (dataSubmit: Game) => {
+    openAlert("שולח משחק...")
     if (stations.length === 0) {
       openAlert("you must add at least 1 station");
       return
     }
-    openAlert("שולח משחק...")
     dataSubmit.madeByName = auth.currentUser?.displayName || "unknown"
     dataSubmit.madeByMail = auth.currentUser?.email || "unknown"
-    dataSubmit.stations.map(async (item: Station) => {
-      let config: RequestInit = {};
-      const pic = await fetch(item.image!, config);
-      const picBlob = await pic.blob();
-      const uuid = "image" + Math.round(Math.random() * 10000000);
-      const picRef = await ref(storage, `images/${dataSubmit.name}/${uuid}`);
-      item.image = picRef.fullPath;
-      uploadBytes(picRef, picBlob).then((snapshot) => {
-        console.log(snapshot.ref);
-      }).then(()=> setDoc(doc(db, "games", dataSubmit.name + "(" + dataSubmit.difficulty + ")"), dataSubmit).then(()=>{
-        hideDialog()
-        navigation.navigate("Games")
+    const listRef = ref(storage, 'images/' + dataSubmit.name);
+    // Find all the prefixes and items.
+    listAll(listRef).then((res) => {
+      dataSubmit.stations.map((item)=>{
+        const uuid = "image" + Math.round(Math.random() * 10000000);
+        const picRef = ref(storage, `images/${dataSubmit.name}/${uuid}`);
+        uploadPics(item.image as string, picRef)
+        item.image = picRef.fullPath;
 
       })
-      )
-    })
+      
+      // uploadPics(dataSubmit).then((data) => {
+        console.log(dataSubmit)
+        setDoc(doc(db, "games", dataSubmit.name + "(" + dataSubmit.difficulty + ")"), dataSubmit).then(() => {
+        hideDialog()
+        FileSystem.deleteAsync(FileSystem.documentDirectory + "/gameInEdit.txt")
+        navigation.navigate("Games")
+        })
+        res.items.forEach((itemRef) => {
+          firebase.deleteObject(itemRef)
+        })
+    
+    }).catch((error) => {
+      // Uh-oh, an error occurred!
+    });
   }
 
+  const uploadPics = async (image:string, path:any) => {
+    // let counter = dataSubmit.stations.length - 1;
+    // dataSubmit.stations.map(async (item: Station) => {
+      let config: RequestInit = {};
+      const pic = await fetch(image!, config);
+      const picBlob = await pic.blob();
+      // const uuid = "image" + Math.round(Math.random() * 10000000);
+      // const picRef = ref(storage, `images/${dataSubmit.name}/${uuid}`);
+      // item.image = picRef.fullPath;
+      // console.log(item.image)
+      await uploadBytes(path, picBlob)
+      
+
+      // .then((snapshot) => {
+      //   console.log(snapshot.ref);
+      // }).then(()=> 
+      // setDoc(doc(db, "games", dataSubmit.name + "(" + dataSubmit.difficulty + ")"), dataSubmit).then(()=>{
+      //   hideDialog()
+      //   FileSystem.deleteAsync(FileSystem.documentDirectory + "/gameInEdit.txt")
+      //   navigation.navigate("Games")
+      // })
+      // )
+    
+    
+  }
   const saveStation = (station: Station) => {
+    if (station.answer && station.answer![station.answer!.length - 1] === " ") {
+      station.answer = station.answer!.slice(0, station.answer!.length - 1)
+    }
     let tempStations = stations;
     tempStations.push(station);
     setStations(tempStations);
@@ -218,6 +257,86 @@ export default function AddGame() {
         }}
       />
       {errors.estimatedTime && <Text>{errors.estimatedTime.message}</Text>}
+      <Controller
+        control={control}
+        name="price"
+        render={({ field: { onChange, value, onBlur } }) => (
+          <TextInput
+            keyboardType='numeric'
+            style={styles.input}
+            placeholder="מחיר המשחק"
+            value={value?.toString()}
+            onBlur={onBlur}
+            onChangeText={value => onChange(value)}
+          />
+        )}
+        rules={{
+          required: {
+            value: true,
+            message: 'יש למלא את השדה הזה'
+          }
+        }}
+      />
+      <Controller
+        control={control}
+        name="description"
+        render={({ field: { onChange, value, onBlur } }) => (
+          <TextInput
+            style={styles.input}
+            placeholder="קישור לנקודת התחלה"
+            value={value?.toString()}
+            onBlur={onBlur}
+            onChangeText={value => onChange(value)}
+          />
+        )}
+        rules={{
+          required: {
+            value: true,
+            message: 'יש למלא את השדה הזה'
+          }
+        }}
+      />
+
+      {errors.description && <Text>{errors.description.message}</Text>}
+      
+      <Controller
+        control={control}
+        name="opening"
+        render={({ field: { onChange, value, onBlur } }) => (
+          <TextInput
+            style={styles.input}
+            placeholder="כתוב טקסט פתיחה למשחק"
+            value={value?.toString()}
+            onBlur={onBlur}
+            onChangeText={value => onChange(value)}
+          />
+        )}
+        rules={{
+          required: {
+            value: true,
+            message: 'יש למלא את השדה הזה'
+          }
+        }}
+      />
+
+      {errors.opening && <Text>{errors.opening.message}</Text>}
+      
+      <Controller
+        control={control}
+        name="endLink"
+        render={({ field: { onChange, value, onBlur } }) => (
+          <TextInput
+            style={styles.input}
+            placeholder="קישור לסיום המשחק"
+            value={value?.toString()}
+            onBlur={onBlur}
+            onChangeText={value => onChange(value)}
+          />
+        )}
+       
+      />
+
+      
       <View>
         {stations && stations.map((item, index) => <View style={{ flexDirection: 'row', margin: 3 }} key={'station' + index}><TouchableOpacity onPress={() => changeOrder(index, 1)}><Feather name="chevron-down" size={30} color="black" /></TouchableOpacity><Text style={styles.list} ><TouchableOpacity style={{ width: 25 }} onPress={() => changeOrder(index, -1)} ><Feather name="chevron-up" size={30} color="black" /></TouchableOpacity>תחנה מספר {index} : {item.header} הפיתרון: {item.answer} </Text></View>)}
         <ButtonPaper onPress={showDialog} mode='elevated' buttonColor='cadetblue'><Text style={{ color: 'white', backgroundColor: 'cadetblue' }}> {stations && stations.length === 0 ? "הכנס תחנה ראשונה" : "הכנס תחנה נוספת"}</Text></ButtonPaper>
@@ -227,9 +346,9 @@ export default function AddGame() {
         <ButtonPaper onPress={resetGame} mode='elevated' buttonColor='cadetblue'><Text style={{ color: 'white', backgroundColor: 'cadetblue' }}>אפס </Text></ButtonPaper>
         <Portal>
           <Dialog visible={visible} onDismiss={hideDialog}>
-            {text?<Text style={styles.text}>{text}</Text>:<AddStation saveStation={saveStation} closeDialog={hideDialog}></AddStation>}
+            {text ? <Text style={styles.text}>{text}</Text> : <AddStation saveStation={saveStation} closeDialog={hideDialog}></AddStation>}
             <Dialog.Actions>
-             {!text && <ButtonPaper onPress={hideDialog}>Cancel</ButtonPaper>}
+              {!text && <ButtonPaper onPress={hideDialog}>Cancel</ButtonPaper>}
             </Dialog.Actions>
           </Dialog>
         </Portal>
@@ -252,10 +371,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'lightgrey',
 
   },
-  text:{
-    fontSize:30,
-    margin:40,
-    marginTop:50,
-    textAlign:'center'
+  text: {
+    fontSize: 30,
+    margin: 40,
+    marginTop: 50,
+    textAlign: 'center'
   }
 })

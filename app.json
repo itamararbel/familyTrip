@@ -4,10 +4,10 @@
     "slug": "familytrip",
     "version": "2.0.0",
     "orientation": "portrait",
-    "icon": "./assets/3play_squere.png",
+    "icon": "./assets/appIcon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/3play_squere.png",
+      "image": "./assets/appIcon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -26,15 +26,15 @@
       "supportsTablet": true
     },
     "android": {
-      "permissions": [ "CAMERA", "WRITE_EXTERNAL_STORAGE", "CAMERA_ROLL","READ_EXTERNAL_STORAGE"],
+      "permissions": [ "CAMERA", "WRITE_EXTERNAL_STORAGE", "CAMERA_ROLL","READ_EXTERNAL_STORAGE"], 
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/appIcon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.itamararbel.familytrip"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/appIcon.png"
     },
     "extra": {
       "eas": {

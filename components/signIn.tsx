@@ -18,23 +18,11 @@ export default function SignIn() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParams>>()
     const auth = getAuth();
     const [modalText,setText] = useState("")
-
-    // const checkLog = async()=>{
-
-    //     auth.onAuthStateChanged(function(user) {
-    //         if (user) {
-    //             navigation.navigate("Games")
-    //         }
-    //       })
-    //     }
-    
                 
-    // useEffect(() => {
-    //     checkLog()
-    // }, [])
-
-
-
+    useEffect(() => {
+           console.log( 'auth:'+auth.currentUser?.uid)
+            
+              }, [])
 
     const handleSignIn = async () => {
         let user: UserModel = {
@@ -48,7 +36,7 @@ export default function SignIn() {
                 const docRef = doc(db, "users", uid);
                 getDoc(docRef).then((resp) => {
                     setText("איזה כיף שחזרתם  " + resp.data()!.name)
-                    navigation.navigate("Games")
+                    resp.data()!.disclaimerApproved ? navigation.navigate("home"): navigation.navigate("disclaimer")
                 })
             }).catch((err) => {
                 console.log(err)

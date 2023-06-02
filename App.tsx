@@ -1,10 +1,10 @@
 import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image, } from 'react-native';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Feather } from "@expo/vector-icons"
 import { AntDesign } from '@expo/vector-icons';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp, createNativeStackNavigator } from '@react-navigation/native-stack';
 import Menu from './components/menu';
 import InGame from './components/InGame';
 import Games from './components/Games';
@@ -18,6 +18,20 @@ import CameraExample from './components/altenativePicture';
 import TakePic from './components/takepic';
 import Loading from './components/Loading';
 import AddStation from './components/addStation';
+import GamesToEdit from './components/gamesToEdit';
+import Home from './components/home';
+import UserInfo from './components/UserInfo';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import Disclaimer from './components/disclaimer';
+import PreGames from './components/preGames';
+import BeforeGame from './components/beforeGame';
+import GamesSuggestions from './components/gamesSuggestions';
+import Recommendations from './components/recomendations';
+import { LinearGradient } from 'expo-linear-gradient';
+
+
+SplashScreen.preventAutoHideAsync();
 
 
 export type RootStackParams = {
@@ -27,32 +41,45 @@ export type RootStackParams = {
   SignUp: any;
   SignIn: any;
   Riddles: any;
-  camera:any;
-  takepic:any;
-  loading:any;
+  camera: any;
+  takepic: any;
+  loading: any;
+  editGame: any;
+  home: any;
+  userInfo: any;
+  disclaimer:any;
+  PreGames:any;
+  beforeGame:any;
+  gamesSuggestions:any
+  Recommendations:any
 };
 const Stack = createNativeStackNavigator<RootStackParams>();
 
 
-interface props {
-  navigation: any
-}
-
 export default function App() {
   const [showMenu, setMenu] = useState(false)
-  const [menuWidth, setWidth] = useState(200);
+  const [menuButton, setMenuButton]= useState(true);
+  const [disclaimerV, setDisclaimerV]= useState(true);
+
   const auth = getAuth()
-  const [isLoggedIn, setLog] = useState(false)
-  const [dialogText, setDialogText] = useState("")
+  auth.onAuthStateChanged(()=>{
+    auth.currentUser?.displayName? setMenuButton(true):setMenuButton(false) 
+  })
+  // const navigation = useNavigation<NativeStackNavigationProp<RootStackParams>>()
 
-  // useEffect( () => {
-  //   auth.onAuthStateChanged((user)=>{
-  //   user?.displayName? setLog(true):setLog(false)  
-  //   })
+  const [fontsLoaded] = useFonts({
+    'Inter-Black': require('./assets/fonts/dorianclm-book-webfont.ttf'),
+  });
 
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+  if (!fontsLoaded) {
+    return null;
+  }
 
-  //   }
-  //    ,[]) 
 
   const closeMenu = () => {
     setMenu(false)
@@ -63,12 +90,6 @@ export default function App() {
     setMenu(true)
   }
 
-  // function openDialog(text: string) {
-  //   setDialogText("fdsafds")
-  // }
-  // async ()=> await Permissions.askAsync(Permissions.CAMERA);
-
-
 
   return (
     <PaperProvider >
@@ -76,14 +97,24 @@ export default function App() {
       <StatusBar hidden={true} />
       <NavigationContainer  >
         {/* <View style={{direction:'rtl'}}> */}
+        <LinearGradient
+        // Background Linear Gradient
+        colors={['cadetblue', 'slategrey','aliceblue']}
+        locations={[0.8,0.7,1]}
+        style={[styles.header,styles.shadowProp]}
+       onLayout={onLayoutRootView}>
 
-        <View style={styles.header}>
+      
+
+        {/* <View style={[styles.header,styles.shadowProp]
+         } onLayout={onLayoutRootView}> */}
           {/* <DialogMassage></DialogMassage> */}
           <Image
             source={require('./assets/3play.png')}
-            style={{ height: 60, width: 120 }}></Image>
-          <Text style={{ fontSize: 30 }}>3play</Text>
-        </View>
+            style={{ height: 60, width: 120, paddingBottom: 50 }}></Image>
+          <Text style={{ fontSize: 40, fontFamily: 'Inter-Black' }}>צובחוץ</Text>
+        {/* </View> */}
+        </LinearGradient>
         <Stack.Navigator initialRouteName='loading' screenOptions={{
           headerShown: false
         }}>
@@ -93,23 +124,27 @@ export default function App() {
           <Stack.Screen name="SignUp" component={SignUp} />
           <Stack.Screen name="SignIn" component={SignIn} />
           <Stack.Screen name="Riddles" component={Riddles} />
-          {/* <Stack.Screen name="takepic" component={TakePic} /> */}
+          {/* <Stack.Screen name="takepic" component={TakePic } /> */}
           <Stack.Screen name="loading" component={Loading} />
           <Stack.Screen name="camera" component={CameraExample} />
+          <Stack.Screen name="editGame" component={GamesToEdit} />
+          <Stack.Screen name="home" component={Home} />
+          <Stack.Screen name="userInfo" component={UserInfo} />
+          <Stack.Screen name="PreGames" component={PreGames} />
+          <Stack.Screen name="beforeGame" component={BeforeGame} />
+          <Stack.Screen name="gamesSuggestions" component={GamesSuggestions} />
+          <Stack.Screen name="Recommendations" component={Recommendations} />
+          <Stack.Screen name="disclaimer">{()=><Disclaimer isMenu={bool=>{setDisclaimerV(bool);console.log(bool)}}/>}</Stack.Screen>  
         </Stack.Navigator>
-        {/* {showMenu ? <View style={{ width: menuWidth, backgroundColor: 'white', position: 'absolute', bottom: 0, right: 80, padding: 0 }}><Menu closeMenu={closeMenu} /></View> : null} */}
-        <TouchableOpacity onPress={() => { showMenu ? closeMenu() : openMenu() }} style={styles.menuButton}>
+       
+        <Dialog visible={showMenu} onDismiss={closeMenu} style={{ position: 'absolute', bottom: 0, right: 0 }} >
+          <Menu closeMenu={closeMenu} />
+        </Dialog>
+        {menuButton&&disclaimerV&&<TouchableOpacity onPress={() => { showMenu ? closeMenu() : openMenu()}} style={styles.menuButton}>
           {(showMenu ? <AntDesign name="rightcircleo" size={50} color="black" /> : <Feather name="menu" size={50} />)}
-        </TouchableOpacity>
-        {/* <Portal> */}
-          <Dialog visible={showMenu} onDismiss={closeMenu} style={{position:'absolute',bottom:0,right:0}} >
-          <Menu closeMenu={closeMenu} />     
-               {/* <Dialog.Actions>
-              <ButtonPaper onPress={hideDialog}>Cancel</ButtonPaper>
-            </Dialog.Actions> */}
-          </Dialog>
+        </TouchableOpacity>}
         {/* </Portal>       */}
-        </NavigationContainer>
+      </NavigationContainer>
     </PaperProvider>
   );
 }
@@ -127,8 +162,8 @@ const styles = StyleSheet.create({
     // width:"100%",
     top: 0,
     padding: 10,
-    height: 60,
-    backgroundColor: "cadetblue",
+    height: 70,
+    // backgroundColor: "cadetblue",
     elevation: 24,
     // borderRadius: 10,
     paddingLeft: 20,
@@ -136,6 +171,11 @@ const styles = StyleSheet.create({
     // flex:1,
     flexDirection: "row",
     justifyContent: "space-between",
+    shadowColor: 'red',
+    shadowOffset: {
+      width: 1,
+      height: 1,
+    },
     // marginHorizontal:10,
 
 
@@ -158,8 +198,21 @@ const styles = StyleSheet.create({
     left: '1%',
     backgroundColor: 'cadetblue',
     borderRadius: 20,
+    shadowColor: 'red',
+
 
   },
+  shadowProp: {
+    shadowColor: '#171717',
+    shadowOffset: {width: -2, height: 4},
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  alwaysred: {
+    backgroundColor: 'red',
+    height: 100,
+    width: 100,
+},
 
 });
 

@@ -11,5 +11,9 @@ export interface Game {
     madeByMail?:string;
     madeByName?:string;
     price?:number;
+    distance?: number;
+    description?:string;
+    opening?: string;
+    endLink?:string;
   }
   
