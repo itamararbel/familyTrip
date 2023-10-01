@@ -14,7 +14,6 @@ import SignUp from './components/SignUp';
 import { getAuth } from "firebase/auth";
 import SignIn from './components/signIn';
 import Riddles from './components/riddles';
-import CameraExample from './components/altenativePicture';
 import TakePic from './components/takepic';
 import Loading from './components/Loading';
 import AddStation from './components/addStation';
@@ -29,6 +28,11 @@ import BeforeGame from './components/beforeGame';
 import GamesSuggestions from './components/gamesSuggestions';
 import Recommendations from './components/recomendations';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
+import appTexts from './model/appTexts';
+import Reset from './components/Reset';
+
+
 
 
 SplashScreen.preventAutoHideAsync();
@@ -52,6 +56,7 @@ export type RootStackParams = {
   beforeGame:any;
   gamesSuggestions:any
   Recommendations:any
+  reset:any
 };
 const Stack = createNativeStackNavigator<RootStackParams>();
 
@@ -60,6 +65,14 @@ export default function App() {
   const [showMenu, setMenu] = useState(false)
   const [menuButton, setMenuButton]= useState(true);
   const [disclaimerV, setDisclaimerV]= useState(true);
+  useEffect(()=>{
+    Location.requestForegroundPermissionsAsync().then((resp)=>{
+      if (resp.status !== 'granted') {
+        alert('לא ניתן להשתמש באפליקציה ללא מיקום, אל דאגה, אנחנו לא שומרים אותו ולא מעבירים אותו לאף אחד');
+        return;
+      }
+    })
+  },[])
 
   const auth = getAuth()
   auth.onAuthStateChanged(()=>{
@@ -86,8 +99,12 @@ export default function App() {
   }
 
   const openMenu = () => {
+    if (appTexts.home){
     console.log("openMenu")
-    setMenu(true)
+    setMenu(true)}
+    else{
+      alert("just a second, we are not ready yet")
+    }
   }
 
 
@@ -122,11 +139,11 @@ export default function App() {
           <Stack.Screen name="InGame" component={InGame} />
           <Stack.Screen name="addGame" component={AddGame} />
           <Stack.Screen name="SignUp" component={SignUp} />
+          <Stack.Screen name="reset" component={Reset} />
           <Stack.Screen name="SignIn" component={SignIn} />
           <Stack.Screen name="Riddles" component={Riddles} />
           {/* <Stack.Screen name="takepic" component={TakePic } /> */}
           <Stack.Screen name="loading" component={Loading} />
-          <Stack.Screen name="camera" component={CameraExample} />
           <Stack.Screen name="editGame" component={GamesToEdit} />
           <Stack.Screen name="home" component={Home} />
           <Stack.Screen name="userInfo" component={UserInfo} />

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Modal, Button } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Modal, Button, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import app from "../fireBase";
@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { RootStackParams } from '../App';
 
 
+
 export default function SignUp() {
   const [modalText,setText] = useState("")
   const [email, setEmail] = useState('');
@@ -19,10 +20,13 @@ export default function SignUp() {
   const { control, handleSubmit, formState: { errors, isValid }, setValue } = useForm<UserModel>({ mode: 'onBlur' });
   const db = getFirestore(app)
   const auth = getAuth();
+  const [loading,setLoading] = useState(false)
+
 
 
   
   const handleSignUp = async () => {
+    setLoading(true)
     let user:UserModel = {
         userMail: email,
         password: password,
@@ -32,9 +36,11 @@ export default function SignUp() {
     user.timeStamp = serverTimestamp();
     if (email.length<6||!email.includes('@')||!email.includes('.')){
       setText("האימייל לא תקין")
+      setLoading(false)
       return
     }
     if (password.length<6){
+      setLoading(false)
       setText("הסיסמה חייבת להיות לפחות עם 6 ספרות")
       return
     }
@@ -45,15 +51,19 @@ export default function SignUp() {
             console.log("there" + creds.user.uid);
             user.password = "";
            setGoogleUid(creds.user.uid)
+           setLoading(false)
+
         }
         else {
           console.log("2")
+          setLoading(false)
 
             await setDoc(doc(db, "users", googleUid), user);
         }
     } catch (err:any) {
       console.log("3")
       setText("המייל קיים או לא תקין")
+      setLoading(false)
 
 
     }
@@ -62,6 +72,8 @@ export default function SignUp() {
 const navigation = useNavigation<NativeStackNavigationProp<RootStackParams>>()
 
 const addUserDetails = async (formData:UserModel)=>{
+  setLoading(true)
+
     auth.currentUser &&
     updateProfile(auth.currentUser, {
         displayName: formData.name,
@@ -69,6 +81,8 @@ const addUserDetails = async (formData:UserModel)=>{
     formData.userMail=email;
     formData.timeStamp = serverTimestamp()
     setDoc(doc(db, "users", googleUid), formData).then(()=>navigation.navigate("disclaimer"));
+    setLoading(false)
+
 }
 // const googleSignIn = async () => {
 //     console.log("i am in")
@@ -112,7 +126,7 @@ if (!googleUid){
         onChangeText={setPassword}
       />
       <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-        <Text style={styles.buttonText}>המשך הרשמה</Text>
+        {loading?<ActivityIndicator animating={true} color={'black'} />:<Text style={styles.buttonText}>המשך הרשמה</Text>}
       </TouchableOpacity>
       <TouchableOpacity style={styles.button}  onPress={()=>navigation.navigate("SignIn")}>
                     <Text style={styles.buttonText}>כבר רשום? עבור לכניסה</Text>
@@ -134,7 +148,7 @@ if (!googleUid){
         render={({ field: { onChange, value, onBlur } }) => (
           <TextInput
             style={styles.input}
-            placeholder="מה שם המשפחה שלכם?- אפשר גם כינוי "
+            placeholder="בחרו כינוי מגניב לקבוצה/משפחה "
             value={value}
             onBlur={onBlur}
             onChangeText={value => onChange(value)}
@@ -191,7 +205,7 @@ if (!googleUid){
       />
       {errors.phoneNumber && <Text style={{color:"red"}}>{errors.phoneNumber.message}</Text>}
       <TouchableOpacity style={styles.button} onPress={handleSubmit(addUserDetails)}>
-        <Text style={styles.buttonText}>סיים רישום</Text>
+        {loading?<ActivityIndicator animating={true} color={'black'} />:<Text style={styles.buttonText}>סיים רישום</Text>}
       </TouchableOpacity>
       
       </View>

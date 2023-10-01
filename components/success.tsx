@@ -30,6 +30,7 @@ interface successScreen {
 
 
 export default function success(props: successScreen) {
+  const goodWork = ['כל הכבוד, תשובה נכונה','אלופים צדקתם','🔥עליכם, תשובה נכונה','סחתיין גאונים שלי','יפה מאוד!!']
   const [randomPic, setRandom] = useState(0)
   useEffect(() => { setRandom(Math.floor(Math.random() * 15)) }, [])
   console.log(randomPic)
@@ -42,7 +43,7 @@ export default function success(props: successScreen) {
             <Image
               source={props.isGameFinished ? lastImage : pic[randomPic]}
               style={{ width: '100%', height: props.isGameFinished ? 200 : 300, borderRadius: 15, marginTop: '-5%' }}
-            /><Text style={{ fontSize: 25, textAlign: 'center', borderBottomColor: 'cadetBlue', borderBottomWidth: 2, marginBottom: 5 }}>{!props.isGameFinished ? 'כל הכבוד, תשובה נכונה' : 'כל הכבוד'}</Text>
+            /><Text style={{ fontSize: 25, textAlign: 'center', borderBottomColor: 'cadetBlue', borderBottomWidth: 2, marginBottom: 5 }}>{!props.isGameFinished ? goodWork[Math.floor(Math.random()*goodWork.length)]: 'כל הכבוד'}</Text>
           </View> : <View></View>}
         <Text style={styles.text}>{props.text?.replace(/\;/g, "\n")}</Text>
         <View>
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     borderColor: 'black solid 1px',
     textAlign: 'center',
     borderRadius: 20,
-    marginVertical: 15
+    marginVertical: 15,
     // overflow:'hidden'
   },
   text: {
@@ -95,8 +96,8 @@ const styles = StyleSheet.create({
     color: 'black',
     fontSize: 20,
     margin: 10,
-    letterSpacing: 2
-
+    letterSpacing: 2,
+    marginHorizontal:15
   },
   button: {
     marginLeft: '25%',

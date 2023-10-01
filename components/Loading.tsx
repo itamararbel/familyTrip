@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParams } from "../App";
 import React from "react";
+import appTexts from "../model/appTexts";
 const image1 = require('../assets/waiting.png')
 
 
@@ -15,8 +16,11 @@ export default function Loading() {
 
   const checkLog =  () => {
     // auth.currentUser?.displayName ? navigation.navigate("home") : navigation.navigate("SignIn")
-
     onAuthStateChanged(auth, (user) => {
+      let counter = 0
+     const interval =  setInterval(()=>{
+        if (appTexts.home){
+          clearInterval(interval);
       if (user?.displayName && user.displayName!="") {
         navigation.navigate("home")
         // console.log("uid" + auth.currentUser?.uid);
@@ -25,7 +29,10 @@ export default function Loading() {
       else if (!user) {
         navigation.navigate("SignIn")
       }
-    });
+  }else{
+    counter >= 20 && alert("יש בעיה עם החיבור לאינטרנט. סגור את האפליקציה ופתח מחדש")
+    counter++
+  }},500)})}
     // auth.onAuthStateChanged(function (user) {
     //   if (user) {
     //     navigation.navigate("home")
@@ -34,7 +41,6 @@ export default function Loading() {
     //     navigation.navigate("SignIn")
     //   }
     // })
-  }
 
 
   useEffect(() => {

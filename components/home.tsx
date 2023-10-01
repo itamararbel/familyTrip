@@ -7,6 +7,8 @@ import { RootStackParams } from "../App";
 import React from "react";
 import { doc, getDoc, getFirestore } from "firebase/firestore";
 import fireBase from "../fireBase";
+import appTexts from '../model/appTexts';
+import { Button } from "react-native-paper";
 
 
 export default function Home() {
@@ -30,9 +32,11 @@ useEffect(() => {
     <View style={styles.container}>
       <Text></Text>
         <Text style={styles.header}>אהלן {auth.currentUser?.displayName}</Text>
-        <Text style={styles.text}>ברוכים הבאים ואיזה כיף ששוב יוצאים לטייל</Text>
-        <Text style={styles.text}>יש לנו מלא דברים להציע לכם כדי שיהיה לכם כיף לטייל ביחד</Text>
-        <Text style={styles.text}>חידות ומשחקים לדרך, בקרוב גם יהיו רעיונות לאטרקציות וכו' וכמובן העיקר, משחקי חידות שיכירו לכם מקומות מקומות מגניבים  ובכיף...</Text>
+        <Text style={styles.text}>{appTexts.home&&appTexts.home.replace(/\;/g, "\n")}</Text>
+        {/* <Button onPress={()=>console.log(appTexts.home)}>press</Button> */}
+                {/* <Text style={styles.text}>ברוכים הבאים ואיזה כיף ששוב יוצאים לטייל</Text>
+        <Text style={styles.text}>חידות ומשחקים לדרך, בקרוב גם יהיו רעיונות לאטרקציות וכו' וכמובן העיקר, משחקי חידות שיכירו לכם מקומות מקומות מגניבים  ובכיף ברוכים הבאים ואיזה כיף ששוב יוצאים לטייל יש לנו מלא דברים להציע לכם כדי שיהיה לכם כיף לטייל ביחד</Text>
+        <Text style={styles.text}>חידות ומשחקים לדרך, בקרוב גם יהיו רעיונות לאטרקציות וכו' וכמובן העיקר, משחקי חידות שיכירו לכם מקומות מקומות מגניבים  ובכיף...</Text> */}
      </View>
   )
 }

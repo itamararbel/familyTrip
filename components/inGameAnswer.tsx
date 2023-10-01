@@ -23,6 +23,10 @@ export default function InGameAnswer(props: props) {
             const stations = props.answer.split(',')
             const temp = stations.shift()
             stations.splice(Math.floor((Math.random() * 4)), 0, temp!)
+            if (stations.indexOf("כל התשובות נכונות")!==-1){
+                stations.splice((stations.indexOf("כל התשובות נכונות")),1)
+                stations.push("כל התשובות נכונות")
+            }
             setStationAnswer(stations)
 
         }

@@ -16,6 +16,7 @@ import { getAuth } from 'firebase/auth';
 import { RootStackParams } from '../App';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { EventEmitter } from 'events';
 
 
 export default function AddGame() {
@@ -31,6 +32,9 @@ export default function AddGame() {
   const [gameInEdit, setGameInEdit] = useState<Game>();
   const [cameraPermission, setCameraPermission] = useState<boolean>(false);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParams>>()
+  const [finishUpload, setFFinishUpload] = useState(false)
+  const [retryButton, setRetryButton] = useState(false)
+  const eventEmitter = new EventEmitter();
 
   const auth = getAuth()
 
@@ -81,68 +85,121 @@ export default function AddGame() {
 
   const saveGame = (dataSubmit: any) => {
     console.log(dataSubmit);
-    FileSystem.writeAsStringAsync(FileSystem.documentDirectory + "/gameInEdit.txt", JSON.stringify(dataSubmit))
+    setVisible(true)
+    setText("שומר משחק")
+    FileSystem.writeAsStringAsync(FileSystem.documentDirectory + "/gameInEdit.txt", JSON.stringify(dataSubmit)).then(() => setText("המשחק נשמר"))
   }
+
   const sendGame = (dataSubmit: Game) => {
-    openAlert("שולח משחק...")
+    setVisible(true)
+    setText("שולח משחק")
+    setFFinishUpload(false)
     if (stations.length === 0) {
-      openAlert("you must add at least 1 station");
+      setText("you must add at least 1 station");
       return
     }
     dataSubmit.madeByName = auth.currentUser?.displayName || "unknown"
     dataSubmit.madeByMail = auth.currentUser?.email || "unknown"
     const listRef = ref(storage, 'images/' + dataSubmit.name);
-    // Find all the prefixes and items.
+    const uploadArr: any[] = [];
+    dataSubmit.stations.map((item) => {
+      const uuid = "image" + Math.round(Math.random() * 10000000);
+      const picRef = ref(storage, `images/${dataSubmit.name}/${uuid}`);
+      const PushAble = {
+        uuid: uuid,
+        ref: picRef,
+        picture: item.image
+      }
+      uploadArr.push(PushAble)
+    })
     listAll(listRef).then((res) => {
-      dataSubmit.stations.map((item)=>{
-        const uuid = "image" + Math.round(Math.random() * 10000000);
-        const picRef = ref(storage, `images/${dataSubmit.name}/${uuid}`);
-        uploadPics(item.image as string, picRef)
-        item.image = picRef.fullPath;
+      uploadListOfPics(uploadArr);
+      eventEmitter.on('uploadComplete', () => {
+        uploadArr.map((item, i) => {
+          dataSubmit.stations[i].image = `images/${dataSubmit.name}/${item.uuid}`
+        }
+        )
+        console.log(dataSubmit)
+        finishUpload()
+        //   setDoc(doc(db, "archiveGames", dataSubmit.name + "(" + dataSubmit.area + ")"), dataSubmit).then(() => {
+        //   setText("המשחק הועלה בהצלחה")
+        //   FileSystem.deleteAsync(FileSystem.documentDirectory + "/gameInEdit.txt")
+        //   setTimeout(() => {navigation.navigate("home"); hideDialog()} ,3000)
+        // }).catch(err=>{
+
+        // });
 
       })
-      
-      // uploadPics(dataSubmit).then((data) => {
-        console.log(dataSubmit)
-        setDoc(doc(db, "games", dataSubmit.name + "(" + dataSubmit.difficulty + ")"), dataSubmit).then(() => {
-        hideDialog()
+      res.items.forEach((itemRef) => {
+        firebase.deleteObject(itemRef)
+      })
+
+    })
+      .catch((error) => {
+        console.log(error)
+      });
+    const finishUpload = () => {
+      setDoc(doc(db, "archiveGames", dataSubmit.name + "(" + dataSubmit.area + ")"), dataSubmit).then(() => {
+        setText("המשחק הועלה בהצלחה")
         FileSystem.deleteAsync(FileSystem.documentDirectory + "/gameInEdit.txt")
-        navigation.navigate("Games")
+        setTimeout(() => { navigation.navigate("home"); hideDialog() }, 3000)
+      }).catch(err => {
+        finishUpload()
+      });
+
+    }
+  }
+
+  const uploadListOfPics = async (images: any[], sended?: number) => {
+    const uploadTimeout = setTimeout(() => setRetryButton(true), 3000)
+    console.log("מעלה")
+    console.log(images.length)
+    let success = sended || 0
+    let err = 0;
+    images.map((item) => {
+      uploadOnePic(item.picture, item.ref).then(() => {
+        images = images.filter((filter) => filter.uuid !== item.uuid)
+        console.log(images.length)
+        success++
+        setText(`מעלה תמונות\nהצליחו ${success}\n נשארו ${images.length}`)
+      }
+      ).catch(() => {
+        err++
+        console.log("missUpload")
+      }).finally(() => {
+        // counter++
+        if (images.length - err === 0) {
+          console.log("finish run")
+          if (err === 0) {
+            console.log("finishAll")
+            console.log("כך התמונות הועלו")
+            setText("כל התמונות הועלו")
+            setRetryButton(false)
+            clearTimeout(uploadTimeout)
+            eventEmitter.emit('uploadComplete');
+          } else {
+            uploadListOfPics(images, success)
+          }
+        }
+      })
+    })
+    return images
+  }
+
+  const uploadOnePic = async (image: string, path: any) => {
+    let config: RequestInit = {};
+    const pic = await fetch(image!, config);
+    const picBlob = await pic.blob();
+
+    return new Promise((resolve, reject) => {
+      uploadBytes(path, picBlob).then(() => resolve(true))
+        .catch((err) => {
+          reject(new Error('Parameter is not a number!'));
+          console.log(err)
         })
-        res.items.forEach((itemRef) => {
-          firebase.deleteObject(itemRef)
-        })
-    
-    }).catch((error) => {
-      // Uh-oh, an error occurred!
     });
   }
 
-  const uploadPics = async (image:string, path:any) => {
-    // let counter = dataSubmit.stations.length - 1;
-    // dataSubmit.stations.map(async (item: Station) => {
-      let config: RequestInit = {};
-      const pic = await fetch(image!, config);
-      const picBlob = await pic.blob();
-      // const uuid = "image" + Math.round(Math.random() * 10000000);
-      // const picRef = ref(storage, `images/${dataSubmit.name}/${uuid}`);
-      // item.image = picRef.fullPath;
-      // console.log(item.image)
-      await uploadBytes(path, picBlob)
-      
-
-      // .then((snapshot) => {
-      //   console.log(snapshot.ref);
-      // }).then(()=> 
-      // setDoc(doc(db, "games", dataSubmit.name + "(" + dataSubmit.difficulty + ")"), dataSubmit).then(()=>{
-      //   hideDialog()
-      //   FileSystem.deleteAsync(FileSystem.documentDirectory + "/gameInEdit.txt")
-      //   navigation.navigate("Games")
-      // })
-      // )
-    
-    
-  }
   const saveStation = (station: Station) => {
     if (station.answer && station.answer![station.answer!.length - 1] === " ") {
       station.answer = station.answer!.slice(0, station.answer!.length - 1)
@@ -195,7 +252,7 @@ export default function AddGame() {
           }
         }}
       />
-      {errors.name && <Text>{errors.name.message}</Text>}
+      {errors.name && <Text style={styles.error}>{errors.name.message}</Text>}
 
       <Controller
         control={control}
@@ -216,7 +273,7 @@ export default function AddGame() {
           }
         }}
       />
-      {errors.area && <Text>{errors.area.message}</Text>}
+      {errors.area && <Text style={styles.error}>{errors.area.message}</Text>}
       <Controller
         control={control}
         name="difficulty"
@@ -236,7 +293,7 @@ export default function AddGame() {
           }
         }}
       />
-      {errors.difficulty && <Text>{errors.difficulty.message}</Text>}
+      {errors.difficulty && <Text style={styles.error}>{errors.difficulty.message}</Text>}
       <Controller
         control={control}
         name="estimatedTime"
@@ -256,7 +313,7 @@ export default function AddGame() {
           }
         }}
       />
-      {errors.estimatedTime && <Text>{errors.estimatedTime.message}</Text>}
+      {errors.estimatedTime && <Text style={styles.error}>{errors.estimatedTime.message}</Text>}
       <Controller
         control={control}
         name="price"
@@ -297,8 +354,8 @@ export default function AddGame() {
         }}
       />
 
-      {errors.description && <Text>{errors.description.message}</Text>}
-      
+      {errors.description && <Text style={styles.error}>{errors.description.message}</Text>}
+
       <Controller
         control={control}
         name="opening"
@@ -319,8 +376,8 @@ export default function AddGame() {
         }}
       />
 
-      {errors.opening && <Text>{errors.opening.message}</Text>}
-      
+      {errors.opening && <Text style={styles.error}>{errors.opening.message}</Text>}
+
       <Controller
         control={control}
         name="endLink"
@@ -333,10 +390,16 @@ export default function AddGame() {
             onChangeText={value => onChange(value)}
           />
         )}
-       
+        rules={{
+          required: {
+            value: true,
+            message: 'יש למלא את השדה הזה'
+          }
+        }}
       />
+      {errors.endLink && <Text style={styles.error}>{errors.endLink.message}</Text>}
 
-      
+
       <View>
         {stations && stations.map((item, index) => <View style={{ flexDirection: 'row', margin: 3 }} key={'station' + index}><TouchableOpacity onPress={() => changeOrder(index, 1)}><Feather name="chevron-down" size={30} color="black" /></TouchableOpacity><Text style={styles.list} ><TouchableOpacity style={{ width: 25 }} onPress={() => changeOrder(index, -1)} ><Feather name="chevron-up" size={30} color="black" /></TouchableOpacity>תחנה מספר {index} : {item.header} הפיתרון: {item.answer} </Text></View>)}
         <ButtonPaper onPress={showDialog} mode='elevated' buttonColor='cadetblue'><Text style={{ color: 'white', backgroundColor: 'cadetblue' }}> {stations && stations.length === 0 ? "הכנס תחנה ראשונה" : "הכנס תחנה נוספת"}</Text></ButtonPaper>
@@ -346,7 +409,7 @@ export default function AddGame() {
         <ButtonPaper onPress={resetGame} mode='elevated' buttonColor='cadetblue'><Text style={{ color: 'white', backgroundColor: 'cadetblue' }}>אפס </Text></ButtonPaper>
         <Portal>
           <Dialog visible={visible} onDismiss={hideDialog}>
-            {text ? <Text style={styles.text}>{text}</Text> : <AddStation saveStation={saveStation} closeDialog={hideDialog}></AddStation>}
+            {text ? <View><Text style={styles.text}>{text}</Text>{retryButton && <ButtonPaper onPress={() => { setVisible(false); setText("") }}><Text>משהו לא עובד כמו שהוא אמור - לבטל ותנסה שוב?</Text></ButtonPaper>}</View> : <AddStation saveStation={saveStation} closeDialog={hideDialog}></AddStation>}
             <Dialog.Actions>
               {!text && <ButtonPaper onPress={hideDialog}>Cancel</ButtonPaper>}
             </Dialog.Actions>
@@ -376,5 +439,7 @@ const styles = StyleSheet.create({
     margin: 40,
     marginTop: 50,
     textAlign: 'center'
+  }, error: {
+    color: 'red'
   }
 })

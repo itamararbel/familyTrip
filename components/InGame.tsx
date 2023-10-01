@@ -29,7 +29,7 @@ export default function InGame() {
   const auth = getAuth()
   const db = getFirestore(fireBase);
   const scrollViewRef = useRef<ScrollView>(null);
-
+console.log(game)
 
   const showDialog = () => setVisible(true);
   const hideDialog = () => {
@@ -48,7 +48,7 @@ export default function InGame() {
     }
     if (i === data.length - 1) {
       setGameFinished(true);
-      data[i].afterCorrectAnswer =auth.currentUser?.displayName +"\n, סיימתם את המשחק בהצלחה👑; מקווים שנהנתם ומקווים לראות אתכם במשחקים הבאים" 
+      data[i].afterCorrectAnswer =auth.currentUser?.displayName +",\n סיימתם את המשחק בהצלחה👑; מקווים שנהנתם ומקווים לראות אתכם במשחקים הבאים" 
       showDialog();
       // FileSystem.readDirectoryAsync(FileSystem.documentDirectory+"/").then((r)=>console.log(r))
     } else {
@@ -114,7 +114,7 @@ export default function InGame() {
               setGame(tempGame);
               setData(tempGame.stations)
               if (tempGame.opening != undefined) {
-                setText(tempGame.opening.replace(/\;/g, "\n"))
+                setText(tempGame.opening)
                 setVisible(true)
               }
             })
@@ -176,7 +176,7 @@ export default function InGame() {
           <View >
           </View>
           <View style={styles.card}>
-            <View style={{borderBottomColor: 'cadetBlue', borderBottomWidth: 2, marginBottom: 15}}><Text style={{ fontSize: 30,marginStart:20 }}>{data[i].header}</Text></View>
+            <View style={{borderBottomColor: 'cadetBlue', borderBottomWidth: 2, marginBottom: 15}}><Text style={{ fontSize: data[i].header.length>30 ? 25:30,marginStart:20}}>{data[i].header}</Text></View>
             {data[i].image && data[i].image!.indexOf("http") === -1 ? <Image
               source={data[i].image ? { uri: data[i].image } : nopic}
               style={{ width: '80%', height: 300, marginLeft: '10%', borderRadius: 15 }}
@@ -200,14 +200,14 @@ export default function InGame() {
           <Portal>
             <Dialog visible={visible} style={{borderRadius:20, overflow:'hidden'}}>
               {openHelp ? <InGameHelp station={data[i]} goBack={() => { i > 0 && setI(i - 1); setHelp(false); setVisible(false); }} nextRiddle={(answer) => { hundleAnswer(answer); setHelp(false); }} /> :
-                text ?
+                text?
                   <ScrollView>
-                    <Text style={styles.text}>{data[i].answerType === "american"? text.split(",")[0] : text}</Text>
+                    <Text style={styles.text}>{text.replace(/\;/g, "\n")}</Text>
                   </ScrollView>
                   : <Success text={data[i].afterCorrectAnswer ? data[i].afterCorrectAnswer : ""} closeDialog={hideDialog} isGameFinished={gameFinished} answer={data[i].answer||""} link={game?.endLink||""} percent={1 - (i+1) / (game && game.stations.length-1||i)}></Success>
               }
               <Dialog.Actions style={{ width: '100%', backgroundColor: 'cadetblue', justifyContent: 'center', alignItems: 'center', height: 60 }}>
-                <TouchableOpacity onPress={hideDialog} style={{ width: '100%', backgroundColor: 'cadetblue', flex: 1, alignItems: 'center', marginTop: 20 }}><Text style={{ width: '100%', backgroundColor: 'cadetblue', textAlign: 'center', fontSize: 30, alignItems: 'center' }}>המשך</Text></TouchableOpacity>
+                <TouchableOpacity onPress={hideDialog} style={{ height:60, width: '100%', backgroundColor: 'cadetblue', alignItems: 'center'}}><Text style={{ height:60, width: '100%', textAlign: 'center', fontSize: 30, alignItems: 'center', marginTop: 30 }}>המשך</Text></TouchableOpacity>
               </Dialog.Actions>
             </Dialog>
           </Portal>
@@ -220,35 +220,36 @@ export default function InGame() {
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'cadetblue',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 20,
-    marginRight: 20,
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: 'cadetblue',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: 20,
+      marginRight: 20,
 
-  },
-  input: {
-    fontSize: 30,
-    textAlign: 'center',
-    margin: 30,
+    },
+    input: {
+      fontSize: 30,
+      textAlign: 'center',
+      margin: 30,
 
-  },
-  card: {
-    justifyContent: "center",
-    width: '100%',
-    borderColor: 'black solid 1px',
-    textAlign: 'center'
-  },
-  text: {
-    // textAlign: 'center',
-    color: 'black',
-    marginStart:25,
-    fontSize: 25,
-    fontWeight:'bold'
-  },
+    },
+    card: {
+      justifyContent: "center",
+      width: '100%',
+      borderColor: 'black solid 1px',
+      textAlign: 'center'
+    },
+    text: {
+      // textAlign: 'right',
+      color: 'black',
+      fontSize: 20,
+      margin: 10,
+      letterSpacing: 2,
+      marginHorizontal:15
+    },
   button: {
     marginLeft: '25%',
     borderRadius: 15,

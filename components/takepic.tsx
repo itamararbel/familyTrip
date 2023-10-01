@@ -39,9 +39,9 @@ export default function TakePic(props: props) {
   //   ).catch(err => console.log(err))
   // }
 
-  function toggleCameraType() {
-    setType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
-  }
+  // function toggleCameraType() {
+  //   setType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
+  // }
 
 
   const __takePicture = () => {
@@ -50,16 +50,13 @@ export default function TakePic(props: props) {
     (camera as unknown as Camera).takePictureAsync().then(async (resp) => {
       console.log('here')
       console.log(resp.uri)
-      alert("after pic");
       let config: RequestInit = {}
-      alert("before fetch")
       const pic = await fetch(resp.uri, config);
       console.log((await pic.blob()).size);
       manipulateAsync(
         resp.uri,
         [{ resize: { width: 400 } }],
         { compress: 0.4, format: SaveFormat.PNG }).then((file) => {
-          alert(file.uri)
           props.getPicUri(file.uri)
           setPreviewVisible(true)
         });
@@ -71,19 +68,10 @@ export default function TakePic(props: props) {
   return (
     <View style={styles.container}>
       <Camera style={styles.camera} type={type} ref={(r) => camera = r}>
-        <View>
-          <TouchableOpacity style={styles.button} onPress={toggleCameraType}>
-            <Feather name='refresh-cw' size={50} />
-          </TouchableOpacity>
-
-        </View>
-
-
       </Camera>
       <TouchableOpacity style={styles.buttonTakePic} onPress={__takePicture}>
         {previewVisible ? <Text style={{ fontSize: 30 }}>retake?</Text> : <Feather name='camera' size={50} />}
       </TouchableOpacity>
-
     </View>
   );
 }

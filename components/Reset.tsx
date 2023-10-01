@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator } from 'react-native';
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
 import app from "../fireBase";
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import UserModel from '../model/userAuth';
@@ -8,54 +8,63 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParams } from '../App';
 import { Button } from 'react-native';
-import { Feather } from '@expo/vector-icons'; 
+import { set } from 'react-hook-form';
 
 
-
-export default function SignIn() {
+export default function Reset() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [googleUid, setGoogleUid] = useState("");
     const db = getFirestore(app)
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParams>>()
     const auth = getAuth();
-    const [modalText,setText] = useState("")
-    const [loading,setLoading] = useState(false)
-    const [visible,setVisible] = useState(false)
-                
+    const [modalText, setText] = useState("")
+    const [loading, setLoading] = useState(false)
+
     useEffect(() => {
-           console.log( 'auth:'+auth.currentUser?.uid)
-            
-              }, [])
+        console.log('auth:' + auth.currentUser?.uid)
 
-    const handleSignIn = async () => {
-        setLoading(true)
-        let user: UserModel = {
-            userMail: email,
-            password: password,
-            uuid: ''
-        }
-        try {
-            signInWithEmailAndPassword(auth, user.userMail, user.password as string).then(() => {
-                let uid = auth.currentUser?.uid || "";
-                const docRef = doc(db, "users", uid);
-                getDoc(docRef).then((resp) => {
-                    setLoading(false)
-                    setText("איזה כיף שחזרתם  " + resp.data()!.name)
-                    resp.data()!.disclaimerApproved ? navigation.navigate("home"): navigation.navigate("disclaimer")
-                })
-            }).catch((err) => {
-                setLoading(false)
-                console.log(err)
-                setText("שם המשתמש או הסיסמה לא נכונים")
+    }, [])
+
+    // const handleSignIn = async () => {
+    //     setLoading(true)
+    //     let user: UserModel = {
+    //         userMail: email,
+    //         password: password,
+    //         uuid: ''
+    //     }
+    //     try {
+    //         signInWithEmailAndPassword(auth, user.userMail, user.password as string).then(() => {
+    //             let uid = auth.currentUser?.uid || "";
+    //             const docRef = doc(db, "users", uid);
+    //             getDoc(docRef).then((resp) => {
+    //                 setLoading(false)
+    //                 setText("איזה כיף שחזרתם  " + resp.data()!.name)
+    //                 resp.data()!.disclaimerApproved ? navigation.navigate("home"): navigation.navigate("disclaimer")
+    //             })
+    //         }).catch((err) => {
+    //             setLoading(false)
+    //             console.log(err)
+    //             setText("שם המשתמש או הסיסמה לא נכונים")
+    //         })
+    //     } catch (err) {
+    //         alert(err)
+    //     }
+    //     console.log(googleUid)
+    // }
+    const handleResetPassword = () => {
+        sendPasswordResetEmail(auth, email)
+            .then(() => {
+                setText("המייל נשלח, כנס לתיבת הדואר שלך ולחץ על הלינק");
+                setTimeout(()=>navigation.navigate('SignIn'),10000)
             })
-        } catch (err) {
-            alert(err)
-        }
-        console.log(googleUid)
+            .catch((error) => {
+                console.log(error)
+                const errorCode = error.code;
+                const errorMessage = error.message;
+                // ..
+            });
     }
-
-
     // const googleSignIn = async () => {
     //     console.log("i am in")
     //     try {
@@ -75,45 +84,44 @@ export default function SignIn() {
     if (!googleUid) {
         return (
             <View style={styles.container}>
-                <Text style={styles.heading}>כניסה</Text>
+                <Text style={styles.heading}>אפס סיסמה</Text>
+                <Text style={styles.modalText}>הכל טוב, זה קורה לכולם</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder='Email'
+                    placeholder='הכנס את המייל שאיתו נרשמת'
                     placeholderTextColor='#9C9C9C'
                     keyboardType='email-address'
                     autoCapitalize='none'
                     onChangeText={setEmail}
                 />
-                <View style={styles.input}>
-                <TextInput
-                    
-                    placeholder='Password'
+                {/* <TextInput
+                    style={styles.input}
+                    placeholder='הכנס סיסמא חדשה'
                     placeholderTextColor='#9C9C9C'
-                    secureTextEntry={visible? false:true}
+                    secureTextEntry={true}
                     onChangeText={setPassword}
-                /><TouchableOpacity onPress={()=>setVisible(!visible)} style={{position:'relative', width:25,top:-25}}>{visible? <Feather name="eye-off" size={24} color="cadetblue" />:<Feather name="eye" size={24} color="cadetblue" />}</TouchableOpacity>
-                </View>
-                <TouchableOpacity style={styles.button} onPress={handleSignIn}>
-                    {loading?   <ActivityIndicator animating={true} color={'black'} />:<Text style={styles.buttonText}>כניסה</Text>}
+                /> */}
+                <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
+                    {loading ? <ActivityIndicator animating={true} color={'black'} /> : <Text style={styles.buttonText}>שלח מייל איפוס</Text>}
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("SignUp")}>
+                {/* <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("SignUp")}>
                     <Text style={styles.buttonText}>עדיין לא רשום? הירשם - זה בחינם😁</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.forget} onPress={() => navigation.navigate("reset")}>
-                    <Text style={styles.forgetText}>🤦🏼‍♀️אני לא מאמין, שכחתי סיסמא🤦🏼‍♂️</Text>
+                </TouchableOpacity> */}
+                <TouchableOpacity style={styles.forget} onPress={() => navigation.navigate("SignIn")}>
+                    <Text style={styles.forgetText}>יש,נזכרתי</Text>
                 </TouchableOpacity>
                 {/* <TouchableOpacity style={styles.googleButton} onPress={googleSignIn}>
         <FontAwesome name='google' size={24} color='red' />
         <Text style={styles.buttonText} > Sign Up with Google</Text>
       </TouchableOpacity> */}
-       <Modal animationType="slide" transparent={true} visible={modalText? true:false}>
-          <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <Text style={styles.modalText}>{modalText}</Text>
-              <Button onPress={()=>setText("")} title="בסדר" color={'cadetblue'}/>
-            </View>
-          </View>
-        </Modal>
+                <Modal animationType="slide" transparent={true} visible={modalText ? true : false}>
+                    <View style={styles.centeredView}>
+                        <View style={styles.modalView}>
+                            <Text style={styles.modalText}>{modalText}</Text>
+                            <Button onPress={() => setText("")} title="בסדר" color={'cadetblue'} />
+                        </View>
+                    </View>
+                </Modal>
             </View>
 
         )
@@ -157,11 +165,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
-    },forget: {
+    }, forget: {
         width: '80%',
         height: 50,
         borderColor: 'cadetblue',
-        borderWidth:1,
+        borderWidth: 1,
         borderRadius: 5,
         justifyContent: 'center',
         alignItems: 'center',
@@ -186,14 +194,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
-    
+
     centeredView: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-      },
-      modalView: {
-        padding:20,
+    },
+    modalView: {
+        padding: 20,
         width: '90%',
         height: 100,
         backgroundColor: 'white',
@@ -201,17 +209,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: {
-          width: 0,
-          height: 2,
+            width: 0,
+            height: 2,
         },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
-      },
-      
-      modalText: {
+    },
+
+    modalText: {
         marginBottom: 15,
         textAlign: 'center',
-      },
+    },
 });
 

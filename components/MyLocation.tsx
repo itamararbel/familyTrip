@@ -38,7 +38,6 @@ function MyLocation() {
 }
 
 async function getLocation(): Promise<Location.LocationObject> {
-  // const [location, setLocation] = useState<Location.LocationObject>();
   let myLocation:Location.LocationObject;
    myLocation = await Location.getCurrentPositionAsync({});
   return myLocation

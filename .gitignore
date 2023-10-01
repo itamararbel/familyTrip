@@ -2,6 +2,8 @@ node_modules/
 .expo/
 dist/
 npm-debug.*
+.expo copy/
+android/
 *.jks
 *.p8
 *.p12

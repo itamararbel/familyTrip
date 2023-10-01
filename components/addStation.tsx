@@ -25,7 +25,7 @@ interface props {
 
 export default function AddStation(props: props) {
   const { register, control, handleSubmit, formState: { errors, isValid }, setValue } = useForm<Station>({ mode: 'onBlur' })
-  const [answerType, setAnswerType] = useState("text")
+  const [answerType, setAnswerType] = useState("string")
   const [date, setDate] = useState("")
   const [isDatePickerVisible, setShow] = useState(true)
   const [location, setLocation] = useState({
@@ -83,17 +83,7 @@ export default function AddStation(props: props) {
 setGetting(false)  
 }
 
-  // const saveLocation = async () => {
-  //   const location = await getLocation();
-  //   !location && alert("לא ניתן לאתר מיקום")
-  //   console.log(location?.coords)
-  //   const submitedLocation = {
-  //     latitude: location?.coords.latitude || 10,
-  //     longitude: location?.coords.longitude || 10,
-  //     accuracy: location?.coords.accuracy || 10,
-  //   }
-  //   setValue('location', submitedLocation)
-  // }
+ 
 
   const hideDatePicker = () => { }
 

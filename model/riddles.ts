@@ -1,6 +1,7 @@
 export default class riddlesModal {
     name: string ="";
     picture:string="";
+    instructions?:string
     riddles:singleRiddle[]=[];
 }
 

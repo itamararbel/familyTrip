@@ -66,14 +66,7 @@ export default function UserInfo() {
                     {user.gamesPlayed &&
                         <Text style={styles.text}> משחקים ששוחקו  : {user.gamesPlayed.length}</Text>}
                     {user.gamesPlayed &&
-                        <SafeAreaView>
-                            <FlatList
-                                style={{}}
-                                data={user.gamesPlayed}
-                                renderItem={({ item }) => <Text style={styles.listText}> שוחק: {item.name} ב: {new Date(item.date).toISOString().split("T")[0]}</Text>
-                                }
-                            /></SafeAreaView>
-                    }
+                            user.gamesPlayed.map((item:any)=><Text style={[styles.listText,{borderColor:'cadetblue',borderBottomWidth:1}]} key={item.name+Math.random()}> שוחק: {item.name} ב: {new Date(item.date).toISOString().split("T")[0]}</Text>)}
                     <Button title="מחק חשבון משתמש" onPress={() => { setVisible(true) }} color="orangered" />
                 </ScrollView>}
         </View>
